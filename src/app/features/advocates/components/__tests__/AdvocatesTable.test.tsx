@@ -12,7 +12,7 @@ describe('AdvocatesTable', () => {
       degree: 'Ph.D.',
       specialties: ['Psychology', 'Counseling'],
       yearsOfExperience: 5,
-      phoneNumber: '123-456-7890',
+      phoneNumber: 5551234567,
       createdAt: new Date()
     }
   ]
@@ -39,6 +39,6 @@ describe('AdvocatesTable', () => {
     expect(screen.getByText('Psychology')).toBeInTheDocument()
     expect(screen.getByText('Counseling')).toBeInTheDocument()
     expect(screen.getByText('5')).toBeInTheDocument()
-    expect(screen.getByText('123-456-7890')).toBeInTheDocument()
+    expect(screen.getByText('5551234567')).toBeInTheDocument()
   })
 }) 
