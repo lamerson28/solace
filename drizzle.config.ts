@@ -6,6 +6,7 @@ const config = {
   },
   verbose: true,
   strict: true,
+  out:'./drizzle'
 };
 
 export default config;
