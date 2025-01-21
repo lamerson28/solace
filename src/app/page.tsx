@@ -1,91 +1,81 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { SearchBar } from "./features/advocates/components/SearchBar";
+import { AdvocatesTable } from "./features/advocates/components/AdvocatesTable";
+import { useAdvocates } from "./features/advocates/hooks/useAdvocates";
 
 export default function Home() {
-  const [advocates, setAdvocates] = useState([]);
-  const [filteredAdvocates, setFilteredAdvocates] = useState([]);
+  const { advocates, isLoading, error, pagination, fetchAdvocates } = useAdvocates();
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    console.log("fetching advocates...");
-    fetch("/api/advocates").then((response) => {
-      response.json().then((jsonResponse) => {
-        setAdvocates(jsonResponse.data);
-        setFilteredAdvocates(jsonResponse.data);
-      });
-    });
+    fetchAdvocates();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const onChange = (e) => {
-    const searchTerm = e.target.value;
+  const onSearch = useCallback(async () => {
+    await fetchAdvocates(searchTerm, 1);
+  }, [fetchAdvocates, searchTerm]);
 
-    document.getElementById("search-term").innerHTML = searchTerm;
+  const onReset = useCallback(async () => {
+    setSearchTerm("");
+    await fetchAdvocates();
+  }, [fetchAdvocates]);
 
-    console.log("filtering advocates...");
-    const filteredAdvocates = advocates.filter((advocate) => {
-      return (
-        advocate.firstName.includes(searchTerm) ||
-        advocate.lastName.includes(searchTerm) ||
-        advocate.city.includes(searchTerm) ||
-        advocate.degree.includes(searchTerm) ||
-        advocate.specialties.includes(searchTerm) ||
-        advocate.yearsOfExperience.includes(searchTerm)
-      );
-    });
-
-    setFilteredAdvocates(filteredAdvocates);
-  };
-
-  const onClick = () => {
-    console.log(advocates);
-    setFilteredAdvocates(advocates);
-  };
+  const onPageChange = useCallback((page: number) => {
+    fetchAdvocates(searchTerm, page);
+  }, [fetchAdvocates, searchTerm]);
 
   return (
-    <main style={{ margin: "24px" }}>
-      <h1>Solace Advocates</h1>
-      <br />
-      <br />
-      <div>
-        <p>Search</p>
-        <p>
-          Searching for: <span id="search-term"></span>
-        </p>
-        <input style={{ border: "1px solid black" }} onChange={onChange} />
-        <button onClick={onClick}>Reset Search</button>
+    <main className="p-6 bg-gradient-to-b from-[#1d4238]/5 to-transparent min-h-screen">
+      <h1 className="text-3xl font-bold text-[#1d4238]">Solace Advocates</h1>
+      <div className="mt-8">
+        <SearchBar
+          searchTerm={searchTerm}
+          isLoading={isLoading}
+          onSearchTermChange={setSearchTerm}
+          onSearch={onSearch}
+          onReset={onReset}
+        />
       </div>
-      <br />
-      <br />
-      <table>
-        <thead>
-          <th>First Name</th>
-          <th>Last Name</th>
-          <th>City</th>
-          <th>Degree</th>
-          <th>Specialties</th>
-          <th>Years of Experience</th>
-          <th>Phone Number</th>
-        </thead>
-        <tbody>
-          {filteredAdvocates.map((advocate) => {
-            return (
-              <tr>
-                <td>{advocate.firstName}</td>
-                <td>{advocate.lastName}</td>
-                <td>{advocate.city}</td>
-                <td>{advocate.degree}</td>
-                <td>
-                  {advocate.specialties.map((s) => (
-                    <div>{s}</div>
-                  ))}
-                </td>
-                <td>{advocate.yearsOfExperience}</td>
-                <td>{advocate.phoneNumber}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      <div className="mt-8">
+        {error ? (
+          <div className="text-center py-8 text-red-600">
+            Error: {error}
+          </div>
+        ) : isLoading ? (
+          <div className="text-center py-8 text-gray-600">Loading...</div>
+        ) : (
+          <>
+            <AdvocatesTable advocates={advocates} />
+            <div className="mt-4 flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                Showing {advocates.length} of {pagination.total} advocates
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => onPageChange(pagination.page - 1)}
+                  disabled={pagination.page <= 1 || isLoading}
+                  className="px-3 py-1 bg-[#1d4238] text-white rounded hover:bg-[#1d4238]/90 disabled:bg-[#1d4238]/50"
+                >
+                  Previous
+                </button>
+                <span className="px-3 py-1">
+                  Page {pagination.page} of {pagination.totalPages}
+                </span>
+                <button
+                  onClick={() => onPageChange(pagination.page + 1)}
+                  disabled={pagination.page >= pagination.totalPages || isLoading}
+                  className="px-3 py-1 bg-[#1d4238] text-white rounded hover:bg-[#1d4238]/90 disabled:bg-[#1d4238]/50"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
     </main>
   );
 }
